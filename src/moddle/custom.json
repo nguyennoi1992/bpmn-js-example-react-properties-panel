@@ -1,10 +1,11 @@
 {
   "name": "custom",
   "uri": "http://custom/ns",
+  "prefix": "custom",
   "associations": [],
   "types": [
     {
-      "name": "TopicHolder",
+      "name": "ServiceTaskExtension",
       "extends": [
         "bpmn:ServiceTask"
       ],
@@ -13,12 +14,58 @@
           "name": "topic",
           "isAttr": true,
           "type": "String"
+        },
+        {
+          "name": "customField",
+          "isAttr": true,
+          "type": "String"
+        },
+        {
+          "name": "outputValue",
+          "isAttr": true,
+          "type": "String"
+        },
+        {
+          "name": "inputKey",
+          "isAttr": true,
+          "type": "String"
+        },
+        {
+          "name": "inputValues",
+          "isAttr": true,
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "ProcessExtension",
+      "extends": [
+        "bpmn:Process"
+      ],
+      "properties": [
+        {
+          "name": "customProcessAttribute",
+          "isAttr": true,
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "SequenceFlowExtension",
+      "extends": [
+        "bpmn:SequenceFlow"
+      ],
+      "properties": [
+        {
+          "name": "listeners",
+          "isAttr": true,
+          "type": "String"
         }
       ]
     }
   ],
-  "prefix": "custom",
   "xml": {
     "tagAlias": "lowerCase"
   }
 }
+

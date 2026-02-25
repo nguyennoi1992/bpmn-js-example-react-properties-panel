@@ -1,0 +1,24 @@
+{
+  "name": "telsoft",
+  "uri": "http://telsoft.com.vn/bpmn",
+  "prefix": "telsoft",
+  "associations": [],
+  "types": [
+    {
+      "name": "GatewayTask",
+      "extends": [
+        "bpmn:ServiceTask"
+      ],
+      "properties": [
+        {
+          "name": "gateway",
+          "isAttr": true,
+          "type": "String"
+        }
+      ]
+    }
+  ],
+  "xml": {
+    "tagAlias": "lowerCase"
+  }
+}

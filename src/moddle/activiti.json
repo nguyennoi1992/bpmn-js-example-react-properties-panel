@@ -1,0 +1,139 @@
+{
+  "name": "activiti",
+  "uri": "http://activiti.org/bpmn",
+  "prefix": "activiti",
+  "associations": [],
+  "types": [
+    {
+      "name": "String",
+      "superClass": ["Element"],
+      "properties": [
+        {
+          "name": "text",
+          "isBody": true,
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "Field",
+      "superClass": ["Element"],
+      "properties": [
+        {
+          "name": "name",
+          "isAttr": true,
+          "type": "String"
+        },
+        {
+          "name": "stringValue",
+          "isAttr": true,
+          "type": "String"
+        },
+        {
+          "name": "string",
+          "type": "activiti:String"
+        },
+        {
+          "name": "expression",
+          "isAttr": true,
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "ExecutionListener",
+      "superClass": ["Element"],
+      "properties": [
+        {
+          "name": "class",
+          "isAttr": true,
+          "type": "String"
+        },
+        {
+          "name": "expression",
+          "isAttr": true,
+          "type": "String"
+        },
+        {
+          "name": "delegateExpression",
+          "isAttr": true,
+          "type": "String"
+        },
+        {
+          "name": "event",
+          "isAttr": true,
+          "type": "String"
+        },
+        {
+          "name": "fields",
+          "type": "activiti:Field",
+          "many": true
+        }
+      ]
+    },
+    {
+      "name": "ServiceTaskExtension",
+      "extends": ["bpmn:ServiceTask"],
+      "properties": [
+        {
+          "name": "class",
+          "isAttr": true,
+          "type": "String"
+        },
+        {
+          "name": "async",
+          "isAttr": true,
+          "type": "Boolean"
+        },
+        {
+          "name": "exclusive",
+          "isAttr": true,
+          "type": "Boolean"
+        },
+        {
+          "name": "delegateExpression",
+          "isAttr": true,
+          "type": "String"
+        },
+        {
+          "name": "expression",
+          "isAttr": true,
+          "type": "String"
+        },
+        {
+          "name": "resultVariable",
+          "isAttr": true,
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "StartEventExtension",
+      "extends": ["bpmn:StartEvent"],
+      "properties": [
+        {
+          "name": "initiator",
+          "isAttr": true,
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "EndEventExtension",
+      "extends": ["bpmn:EndEvent"],
+      "properties": [
+        {
+          "name": "terminateAll",
+          "isAttr": true,
+          "type": "Boolean"
+        }
+      ]
+    }
+  ],
+  "enumerations": [],
+  "emumerations": [],
+  "xml": {
+    "tagAlias": "lowerCase",
+    "typePrefix": "activiti"
+  }
+}
