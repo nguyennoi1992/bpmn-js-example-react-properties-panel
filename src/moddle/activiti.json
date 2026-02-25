@@ -4,17 +4,8 @@
   "prefix": "activiti",
   "associations": [],
   "types": [
-    {
-      "name": "String",
-      "superClass": ["Element"],
-      "properties": [
-        {
-          "name": "text",
-          "isBody": true,
-          "type": "String"
-        }
-      ]
-    },
+
+
     {
       "name": "Field",
       "superClass": ["Element"],
@@ -33,10 +24,24 @@
           "name": "string",
           "type": "activiti:String"
         },
+
+
+
         {
           "name": "expression",
           "isAttr": true,
           "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "String",
+      "superClass": ["Element"],
+      "properties": [
+        {
+          "name": "text",
+          "type": "String",
+          "isBody": true
         }
       ]
     },
@@ -67,7 +72,7 @@
         {
           "name": "fields",
           "type": "activiti:Field",
-          "many": true
+          "isMany": true
         }
       ]
     },

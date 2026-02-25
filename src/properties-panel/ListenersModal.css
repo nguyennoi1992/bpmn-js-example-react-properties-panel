@@ -232,16 +232,46 @@
 
 .action-btn {
   padding: 4px 8px;
-  background: #f44336;
-  color: white;
+  background: #e0e0e0;
+  color: #333;
   border: none;
   border-radius: 2px;
   cursor: pointer;
   font-size: 11px;
+  margin: 0 2px;
 }
 
 .action-btn:hover {
-  background: #d32f2f;
+  opacity: 0.9;
+}
+
+.action-btn.save-btn {
+  background: #4CAF50;
+  color: #fff;
+}
+
+.action-btn.edit-btn {
+  background: #1976d2;
+  color: #fff;
+}
+
+.action-btn.info-btn {
+  background: #7b1fa2;
+  color: #fff;
+}
+
+.action-btn.delete-btn {
+  background: #e53935;
+  color: #fff;
+}
+
+.modal-table input[type="text"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 4px 6px;
+  border: 1px solid #ccc;
+  border-radius: 2px;
+  font-size: 11px;
 }
 
 @media (max-width: 768px) {

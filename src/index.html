@@ -39,6 +39,9 @@
       cursor: pointer;
       font-size: 14px;
       font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .toolbar button:hover {
@@ -49,8 +52,164 @@
       background-color: #3d8b40;
     }
 
+    .toolbar button:disabled {
+      background-color: #9bbf9b;
+      cursor: not-allowed;
+      opacity: 0.8;
+    }
+    .btn-icon {
+      width: 14px;
+      height: 14px;
+      display: inline-block;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      filter: drop-shadow(0 0 0 rgba(0,0,0,0));
+    }
+
+    .icon-import {
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M10 3h4v8h3l-5 5-5-5h3V3z"/><path d="M4 14h16v5H4z"/></svg>');
+    }
+
+    .icon-export {
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M10 21h4v-8h3l-5-5-5 5h3v8z"/><path d="M4 5h16v5H4z"/></svg>');
+    }
+
+    .icon-new {
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M4 3h12l4 4v14H4z"/><path d="M8 12h8v2H8zm0 4h8v2H8z"/><path d="M15 3v5h5"/></svg>');
+    }
+
+    .icon-layout {
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M4 6h6v6H4zM14 6h6v6h-6zM9 14h6v4H9z"/><path d="M12 12v2"/></svg>');
+    }
+
+    .icon-undo {
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M12 5c-3.86 0-7 3.14-7 7H2l4 4 4-4H7c0-2.76 2.24-5 5-5h6v2H12z"/><path d="M18 9h2v6h-2z"/></svg>');
+    }
+
     .toolbar input[type="file"] {
       display: none;
+    }
+
+    .module-toolbar {
+      padding: 8px 12px;
+      background-color: #f7f7f7;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .module-toolbar select,
+    .module-toolbar input[type="text"] {
+      padding: 6px 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 13px;
+      min-width: 220px;
+    }
+
+    .combo {
+      position: relative;
+      min-width: 220px;
+      font-size: 13px;
+    }
+
+    .combo-display {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #fff;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .combo-caret {
+      margin-left: 8px;
+      color: #666;
+      font-size: 10px;
+    }
+
+    .combo-panel {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+      z-index: 1000;
+      display: none;
+      max-height: 260px;
+      overflow: hidden;
+    }
+
+    .combo-panel.open {
+      display: block;
+    }
+
+    .combo-search {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 6px 8px;
+      border: none;
+      border-bottom: 1px solid #eee;
+      outline: none;
+      font-size: 13px;
+    }
+
+    .combo-list {
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    .combo-item {
+      padding: 6px 8px;
+      cursor: pointer;
+    }
+
+    .combo-item:hover {
+      background: #f2f6ff;
+    }
+
+    .module-toolbar button {
+      padding: 6px 12px;
+      background-color: #1976d2;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .module-toolbar button:hover {
+      background-color: #1565c0;
+    }
+
+    .search-results {
+      padding: 6px 12px;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      display: none;
+      max-height: 220px;
+      overflow-y: auto;
+      font-size: 13px;
+    }
+
+    .search-item {
+      padding: 6px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .search-item:hover {
+      background: #f2f6ff;
     }
 
     .modeler-parent {
@@ -58,7 +217,79 @@
       display: flex;
       flex-direction: row;
       gap: 0;
-      height: calc(100vh - 51px);
+    }
+
+    #modules-container {
+      width: 260px;
+      min-width: 220px;
+      max-width: 35%;
+      overflow-y: auto;
+      background: #eef6f1;
+      border-right: 2px solid #ccc;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modules-header {
+      padding: 10px 12px;
+      font-weight: 600;
+      border-bottom: 1px solid #c8e6d0;
+      background: #dff2e6;
+    }
+
+    .tasks-list {
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .task-item {
+      padding: 8px 10px;
+      background: #7fd9a8;
+      border: 1px solid #56bf86;
+      border-radius: 6px;
+      cursor: grab;
+      user-select: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      position: relative;
+    }
+
+    .task-item:active {
+      cursor: grabbing;
+    }
+
+    .task-name {
+      font-weight: 600;
+      color: #0b3d1e;
+      font-size: 13px;
+    }
+
+    .task-class {
+      font-size: 12px;
+      color: #1f5f3a;
+      word-break: break-all;
+    }
+
+    .task-remove {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: none;
+      background: #e53935;
+      color: #fff;
+      font-size: 12px;
+      line-height: 18px;
+      cursor: pointer;
+    }
+
+    .task-remove:hover {
+      background: #c62828;
     }
 
     #modeler-container {
@@ -78,6 +309,10 @@
       border-right: 2px solid #ccc;
     }
 
+    #properties-container.properties-hidden {
+      display: none;
+    }
+
     /* Resizable container */
     .resizable-panel {
       resize: vertical;
@@ -88,11 +323,43 @@
 </head>
 <body>
   <div class="toolbar">
-    <button id="import-btn">📂 Import XML</button>
-    <button id="export-btn">💾 Export XML</button>
+    <button id="import-btn"><span class="btn-icon icon-import"></span>Import XML</button>
+    <button id="export-btn"><span class="btn-icon icon-export"></span>Export XML</button>
+    <button id="new-btn"><span class="btn-icon icon-new"></span>New XML</button>
+    <button id="auto-layout-btn"><span class="btn-icon icon-layout"></span>Auto Layout</button>
+    <button id="undo-btn" disabled><span class="btn-icon icon-undo"></span>Undo</button>
     <input type="file" id="file-input" accept=".bpmn,.xml" />
   </div>
+  <div class="module-toolbar">
+    <div class="combo" id="module-combo">
+      <div class="combo-display" id="module-display">
+        <span id="module-display-text">-- Select module --</span>
+        <span class="combo-caret">▼</span>
+      </div>
+      <div class="combo-panel" id="module-panel">
+        <input type="text" class="combo-search" id="module-search" placeholder="Filter module..." />
+        <div class="combo-list" id="module-list"></div>
+      </div>
+    </div>
+    <div class="combo" id="function-combo">
+      <div class="combo-display" id="function-display">
+        <span id="function-display-text">-- Select function --</span>
+        <span class="combo-caret">▼</span>
+      </div>
+      <div class="combo-panel" id="function-panel">
+        <input type="text" class="combo-search" id="function-search-filter" placeholder="Filter function..." />
+        <div class="combo-list" id="function-list"></div>
+      </div>
+    </div>
+    <input type="text" id="function-search" placeholder="Search function name..." />
+    <button id="search-btn">Search</button>
+  </div>
+  <div id="search-results" class="search-results"></div>
   <div class="modeler-parent">
+    <div id="modules-container">
+      <div class="modules-header">Functions</div>
+      <div id="tasks-list" class="tasks-list"></div>
+    </div>
     <div id="modeler-container"></div>
     <div id="properties-container"></div>
   </div>

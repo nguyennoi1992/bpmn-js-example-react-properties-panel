@@ -77,17 +77,17 @@ export default class PropertiesView extends Component {
 
         {
           selectedElements.length === 1
-            && <ElementProperties modeler={ modeler } element={ element } />
+          && <ElementProperties modeler={modeler} element={element} />
         }
 
         {
           selectedElements.length === 0
-            && <div style={{ padding: '10px', textAlign: 'center', color: '#999' }}>Please select an element.</div>
+          && <div style={{ padding: '10px', textAlign: 'center', color: '#999' }}>Please select an element.</div>
         }
 
         {
           selectedElements.length > 1
-            && <div style={{ padding: '10px', textAlign: 'center', color: '#999' }}>Please select a single element.</div>
+          && <div style={{ padding: '10px', textAlign: 'center', color: '#999' }}>Please select a single element.</div>
         }
       </div>
     );
@@ -104,6 +104,7 @@ function ElementProperties(props) {
   } = props;
 
   const [showListenersModal, setShowListenersModal] = React.useState(false);
+  const [conditionInput, setConditionInput] = React.useState('');
 
   if (element.labelTarget) {
     element = element.labelTarget;
@@ -125,7 +126,7 @@ function ElementProperties(props) {
     const modeling = modeler.get('modeling');
     const bpmnFactory = modeler.get('bpmnFactory');
     const bo = element.businessObject;
-    
+
     // Check if this is a parameter that should go in extensionElements
     const fieldNames = ['custom:inputKey', 'custom:inputValues', 'custom:outputValue'];
     const fieldNameMap = {
@@ -133,7 +134,7 @@ function ElementProperties(props) {
       'custom:inputValues': 'INPUT_VALUES',
       'custom:outputValue': 'OUTPUT_VALUE'
     };
-    
+
     if (fieldNames.includes(key)) {
       // Save to extensionElements as activiti:field
       if (!bo.extensionElements) {
@@ -142,17 +143,17 @@ function ElementProperties(props) {
           bo.extensionElements.values = [];
         }
       }
-      
+
       if (!bo.extensionElements.values) {
         bo.extensionElements.values = [];
       }
-      
+
       const fieldName = fieldNameMap[key];
-      let field = bo.extensionElements.values.find(v => 
-        v.$type === 'activiti:Field' && 
+      let field = bo.extensionElements.values.find(v =>
+        v.$type === 'activiti:Field' &&
         v.name === fieldName
       );
-      
+
       if (value === '' || value === undefined) {
         // Remove field if value is empty
         if (field) {
@@ -169,13 +170,13 @@ function ElementProperties(props) {
           });
           bo.extensionElements.values.push(field);
         }
-        
-        // Create activiti:String object with text content
-        const stringObj = bpmnFactory.create('activiti:String');
-        stringObj.text = value;
-        field.string = stringObj;
+
+        // Create string value as attribute (stringValue)
+        field.stringValue = value;
+        // Ensure legacy string property is cleared to avoid conflict
+        field.string = undefined;
       }
-      
+
       // Trigger update to reflect changes
       modeling.updateProperties(element, {});
     } else {
@@ -188,14 +189,14 @@ function ElementProperties(props) {
 
   function getPropertyValue(key, defaultValue = '') {
     const bo = element.businessObject;
-    
+
     // Map custom properties to field names
     const fieldNameMap = {
       'custom:inputKey': 'INPUT_KEY',
       'custom:inputValues': 'INPUT_VALUES',
       'custom:outputValue': 'OUTPUT_VALUE'
     };
-    
+
     // Try direct property access first
     if (key.includes(':')) {
       const value = bo.get(key);
@@ -207,16 +208,16 @@ function ElementProperties(props) {
         return bo[key];
       }
     }
-    
+
     // Try to read from extensionElements as activiti:field
     if (bo.extensionElements && bo.extensionElements.values) {
       const fieldName = fieldNameMap[key] || key.split(':')[1]?.toUpperCase() || key.toUpperCase();
-      
-      const field = bo.extensionElements.values.find(v => 
-        v.$type === 'activiti:Field' && 
+
+      const field = bo.extensionElements.values.find(v =>
+        v.$type === 'activiti:Field' &&
         v.name === fieldName
       );
-      
+
       if (field) {
         // Try stringValue attribute first
         if (field.stringValue !== undefined && field.stringValue !== null) {
@@ -249,7 +250,8 @@ function ElementProperties(props) {
         // Try to access child elements directly (for <string> tags without namespace)
         if (field.$children) {
           for (const child of field.$children) {
-            if (child.$type === 'string' || child.$type === 'activiti:String') {
+            // Check for TextNode or legacy String types
+            if (child.$type === 'string' || child.$type === 'activiti:String' || child.$type === 'activiti:TextNode' || child.$type === 'activiti:Value') {
               if (child.text !== undefined && child.text !== null) {
                 return child.text;
               }
@@ -261,37 +263,51 @@ function ElementProperties(props) {
         }
       }
     }
-    
+
     return defaultValue;
   }
 
-  function renderPropertyRow(label, value, onChange, type = 'text', options = null) {
+  function renderPropertyRow(label, value, onChange, type = 'text', options = null, inputProps = null) {
     // Special handling for Listeners field
     if (label === 'Listeners') {
       // Build listeners array display - combine MessageListener and StatusListener
       const bo = element.businessObject;
       const extensionElements = bo.extensionElements;
       let listenersArray = [];
-      
+
       if (extensionElements && extensionElements.values) {
         // Get all listeners
-        const messageListeners = extensionElements.values.filter(v => 
-          v.$type === 'activiti:ExecutionListener' && 
-          v.class && 
+        const messageListeners = extensionElements.values.filter(v =>
+          v.$type === 'activiti:ExecutionListener' &&
+          v.class &&
           v.class.includes('TakeProcessListenerMessage')
         );
-        
-        const statusListeners = extensionElements.values.filter(v => 
-          v.$type === 'activiti:ExecutionListener' && 
-          v.class && 
+
+        const statusListeners = extensionElements.values.filter(v =>
+          v.$type === 'activiti:ExecutionListener' &&
+          v.class &&
           v.class.includes('TakeProcessListenerStatus')
         );
-        
-        // Helper to extract field value - improved to handle all field types
-        const getFieldValue = (listener, fieldName) => {
-          if (!listener || !listener.fields || !Array.isArray(listener.fields)) return '';
 
-          const field = listener.fields.find(f => f.name === String(fieldName));
+        // Helper to extract field value - improved to handle all field types
+        const getListenerFields = (listener) => {
+          if (!listener) return [];
+
+          if (Array.isArray(listener.fields) && listener.fields.length > 0) {
+            return listener.fields;
+          }
+
+          if (Array.isArray(listener.$children)) {
+            const childFields = listener.$children.filter(c =>
+              c.$type === 'activiti:Field' || c.$type === 'Field' || c.$type === 'field'
+            );
+            if (childFields.length > 0) return childFields;
+          }
+
+          return [];
+        };
+
+        const getFieldValueFromField = (field) => {
           if (!field) return '';
 
           // Try stringValue attribute first
@@ -322,7 +338,7 @@ function ElementProperties(props) {
           // Try to access child elements directly (for <string> tags without namespace)
           if (field.$children) {
             for (const child of field.$children) {
-              if (child.$type === 'string' || child.$type === 'activiti:String') {
+              if (child.$type === 'string' || child.$type === 'activiti:String' || child.$type === 'activiti:Value' || child.$type === 'activiti:ActivitiString') {
                 if (child.text !== undefined && child.text !== null) {
                   return String(child.text);
                 }
@@ -335,23 +351,36 @@ function ElementProperties(props) {
 
           return '';
         };
-        
-        // Combine data: resultCode and message from MessageListener, status from StatusListener
+
+        // Build map for status fields by result code (field name)
+        const statusFieldMap = new Map();
+        statusListeners.forEach(statusListener => {
+          const statusFields = getListenerFields(statusListener);
+          statusFields.forEach(field => {
+            const key = field.name != null ? String(field.name) : '';
+            if (key) {
+              statusFieldMap.set(key, getFieldValueFromField(field));
+            }
+          });
+        });
+
+        // Combine data: resultCode (field name) and message (field value) from MessageListener,
+        // and status from StatusListener with same field name
         messageListeners.forEach(msgListener => {
-          const resultCode = getFieldValue(msgListener, '0');
-          const message = getFieldValue(msgListener, '2');
-          
-          // Find corresponding StatusListener with same resultCode
-          const statusListener = statusListeners.find(sListener => 
-            getFieldValue(sListener, '0') === resultCode
-          );
-          const status = statusListener ? getFieldValue(statusListener, '2') : '';
-          
-          listenersArray.push(`[${resultCode}, ${message}, ${status}]`);
+          const msgFields = getListenerFields(msgListener);
+          msgFields.forEach(field => {
+            const resultCode = field.name != null ? String(field.name) : '';
+            const message = getFieldValueFromField(field);
+            const status = resultCode ? (statusFieldMap.get(resultCode) || '') : '';
+
+            if (resultCode || message || status) {
+              listenersArray.push(`[${resultCode}, ${message}, ${status}]`);
+            }
+          });
         });
       }
 
-      const listenersDisplayValue = listenersArray.length > 0 
+      const listenersDisplayValue = listenersArray.length > 0
         ? `[${listenersArray.join(', ')}]`
         : '';
 
@@ -359,7 +388,7 @@ function ElementProperties(props) {
         <tr key={label} className={listenersDisplayValue ? 'has-value' : ''}>
           <td className="property-name">{label}</td>
           <td className="property-value">
-            <button 
+            <button
               className="listeners-btn"
               onClick={() => setShowListenersModal(true)}
               title={listenersDisplayValue}
@@ -384,9 +413,9 @@ function ElementProperties(props) {
               ))}
             </select>
           ) : type === 'textarea' ? (
-            <textarea value={value} onChange={onChange} rows="2"></textarea>
+            <textarea value={value} onChange={onChange} rows="2" {...(inputProps || {})}></textarea>
           ) : (
-            <input type={type} value={value} onChange={onChange} />
+            <input type={type} value={value} onChange={onChange} {...(inputProps || {})} />
           )}
         </td>
       </tr>
@@ -445,14 +474,14 @@ function ElementProperties(props) {
     // Extract values from condition expression
     // Example: ${$RESULT_CODE=='0' || $RESULT_CODE=='2'} -> "0,2"
     if (!conditionExpr?.body) return '';
-    
+
     const body = conditionExpr.body;
     const matches = body.match(/\$RESULT_CODE=='(\d+)'/g);
-    
+
     if (!matches || matches.length === 0) {
       return body; // Return full expression if format doesn't match
     }
-    
+
     const values = matches.map(m => m.match(/'(\d+)'/)[1]);
     return values.join(',');
   }
@@ -462,41 +491,66 @@ function ElementProperties(props) {
     if (!value || value.trim() === '') {
       return '';
     }
-    
+
     // Check if it's already a full expression
     if (value.includes('${') && value.includes('}')) {
       return value;
     }
-    
+
     const values = value.split(',').map(v => v.trim()).filter(v => v);
     if (values.length === 0) return '';
-    
+
     const conditions = values.map(v => `$RESULT_CODE=='${v}'`).join(' || ');
     return `\${${conditions}}`;
   }
 
   function updateCondition(value) {
     const modeling = modeler.get('modeling');
-    const expressionValue = buildConditionExpression(value);
-    
+    const bpmnFactory = modeler.get('bpmnFactory');
+    const parts = (value || '').split(',').map(v => v.trim()).filter(v => v);
+    const uniqueParts = Array.from(new Set(parts));
+    const sortedParts = uniqueParts.slice().sort((a, b) => {
+      const na = Number(a);
+      const nb = Number(b);
+      const aIsNum = Number.isFinite(na);
+      const bIsNum = Number.isFinite(nb);
+
+      if (aIsNum && bIsNum) return na - nb;
+      if (aIsNum && !bIsNum) return -1;
+      if (!aIsNum && bIsNum) return 1;
+      return a.localeCompare(b);
+    });
+    const trimmedValue = sortedParts.join(',');
+    const expressionValue = buildConditionExpression(trimmedValue);
+
     const conditionExpr = element.businessObject.conditionExpression;
-    if (conditionExpr) {
+    if (conditionExpr && conditionExpr.$descriptor) {
       conditionExpr.body = expressionValue;
     } else if (expressionValue) {
-      element.businessObject.conditionExpression = {
-        $type: 'bpmn:FormalExpression',
+      element.businessObject.conditionExpression = bpmnFactory.create('bpmn:FormalExpression', {
         body: expressionValue
-      };
+      });
     }
-    
-    modeling.updateProperties(element, { 
-      conditionExpression: element.businessObject.conditionExpression 
+
+    modeling.updateProperties(element, {
+      conditionExpression: element.businessObject.conditionExpression,
+      name: trimmedValue || undefined
     });
   }
 
+  React.useEffect(() => {
+    if (is(element, 'bpmn:SequenceFlow')) {
+      const conditionExpr = element.businessObject.conditionExpression;
+      const conditionDisplayValue = getConditionValue(conditionExpr);
+      setConditionInput(conditionDisplayValue);
+    } else {
+      setConditionInput('');
+    }
+  }, [element.id, element.businessObject?.conditionExpression?.body]);
+
   function renderSection(title, rows) {
     if (!rows || rows.length === 0) return null;
-    
+
     return (
       <div key={title} className="properties-section">
         <div className="section-header">
@@ -517,18 +571,18 @@ function ElementProperties(props) {
     renderPropertyRow('ID', element.id, null)
   );
   generalRows.push(
-    renderPropertyRow('Name', element.businessObject.name || '', 
+    renderPropertyRow('Name', element.businessObject.name || '',
       (e) => updateName(e.target.value))
   );
 
   // StartEvent properties
   if (is(element, 'bpmn:StartEvent')) {
     generalRows.push(
-      renderPropertyRow('FormKey', getPropertyValue('form:formKey', ''), 
+      renderPropertyRow('FormKey', getPropertyValue('form:formKey', ''),
         (e) => updateProperty('form:formKey', e.target.value))
     );
     generalRows.push(
-      renderPropertyRow('Initiator', getPropertyValue('activiti:initiator', ''), 
+      renderPropertyRow('Initiator', getPropertyValue('activiti:initiator', ''),
         (e) => updateProperty('activiti:initiator', e.target.value))
     );
   }
@@ -536,7 +590,7 @@ function ElementProperties(props) {
   // EndEvent properties
   if (is(element, 'bpmn:EndEvent')) {
     generalRows.push(
-      renderPropertyRow('TerminateAll', getPropertyValue('activiti:terminateAll', 'false'), 
+      renderPropertyRow('TerminateAll', getPropertyValue('activiti:terminateAll', 'false'),
         (e) => updateProperty('activiti:terminateAll', e.target.value === 'true'),
         'select', ['false', 'true'])
     );
@@ -544,16 +598,16 @@ function ElementProperties(props) {
 
   if (is(element, 'bpmn:ServiceTask')) {
     generalRows.push(
-      renderPropertyRow('Class', getPropertyValue('activiti:class', ''), 
+      renderPropertyRow('Class', getPropertyValue('activiti:class', ''),
         (e) => updateProperty('activiti:class', e.target.value))
     );
     generalRows.push(
-      renderPropertyRow('Asynchronous', getPropertyValue('activiti:async', 'false'), 
+      renderPropertyRow('Asynchronous', getPropertyValue('activiti:async', 'false'),
         (e) => updateProperty('activiti:async', e.target.value === 'true'),
         'select', ['false', 'true'])
     );
     generalRows.push(
-      renderPropertyRow('Exclusive', getPropertyValue('activiti:exclusive', 'true'), 
+      renderPropertyRow('Exclusive', getPropertyValue('activiti:exclusive', 'true'),
         (e) => updateProperty('activiti:exclusive', e.target.value === 'true'),
         'select', ['false', 'true'])
     );
@@ -564,19 +618,19 @@ function ElementProperties(props) {
 
   if (is(element, 'bpmn:ServiceTask')) {
     parameterRows.push(
-      renderPropertyRow('Input_Key', getPropertyValue('custom:inputKey', ''), 
+      renderPropertyRow('Input_Key', getPropertyValue('custom:inputKey', ''),
         (e) => updateProperty('custom:inputKey', e.target.value))
     );
     parameterRows.push(
-      renderPropertyRow('Input_Values', getPropertyValue('custom:inputValues', ''), 
+      renderPropertyRow('Input_Values', getPropertyValue('custom:inputValues', ''),
         (e) => updateProperty('custom:inputValues', e.target.value))
     );
     parameterRows.push(
-      renderPropertyRow('Output_Value', getPropertyValue('custom:outputValue', ''), 
+      renderPropertyRow('Output_Value', getPropertyValue('custom:outputValue', ''),
         (e) => updateProperty('custom:outputValue', e.target.value))
     );
     parameterRows.push(
-      renderPropertyRow('Retry', getPropertyValue('telsoft:gateway', ''), 
+      renderPropertyRow('Retry', getPropertyValue('telsoft:gateway', ''),
         (e) => updateProperty('telsoft:gateway', e.target.value))
     );
   }
@@ -585,24 +639,36 @@ function ElementProperties(props) {
   const flowRows = [];
   const listenersRows = [];
   const mainConfigRows = [];
-  
+
   if (is(element, 'bpmn:SequenceFlow')) {
     listenersRows.push(
       renderPropertyRow('Listeners', '', null)
     );
-    
-    // Get condition value in simple format (0,2,3)
-    const conditionExpr = element.businessObject.conditionExpression;
-    const conditionDisplayValue = getConditionValue(conditionExpr);
-    
+
     mainConfigRows.push(
-      renderPropertyRow('Condition', conditionDisplayValue, 
-        (e) => updateCondition(e.target.value))
+      renderPropertyRow(
+        'Condition',
+        conditionInput,
+        (e) => {
+          const nextValue = e.target.value;
+          setConditionInput(nextValue);
+          updateCondition(nextValue);
+        },
+        'text',
+        null,
+        {
+          onBlur: () => {
+            const conditionExpr = element.businessObject.conditionExpression;
+            const conditionDisplayValue = getConditionValue(conditionExpr);
+            setConditionInput(conditionDisplayValue);
+          }
+        }
+      )
     );
   }
 
   return (
-    <div className="element-properties table-layout" key={ element.id }>
+    <div className="element-properties table-layout" key={element.id}>
       <div className="properties-container">
         {renderSection('General', generalRows)}
         {is(element, 'bpmn:SequenceFlow') && renderSection('Listeners', listenersRows)}
@@ -614,24 +680,24 @@ function ElementProperties(props) {
         <div className="properties-actions">
           {
             is(element, 'bpmn:Task') && !is(element, 'bpmn:ServiceTask') &&
-              <button onClick={ makeServiceTask }>Make Service Task</button>
+            <button onClick={makeServiceTask}>Make Service Task</button>
           }
 
           {
             is(element, 'bpmn:Event') && !hasDefinition(element, 'bpmn:MessageEventDefinition') &&
-              <button onClick={ makeMessageEvent }>Make Message Event</button>
+            <button onClick={makeMessageEvent}>Make Message Event</button>
           }
 
           {
             is(element, 'bpmn:Task') && !isTimeoutConfigured(element) &&
-              <button onClick={ attachTimeout }>Attach Timeout</button>
+            <button onClick={attachTimeout}>Attach Timeout</button>
           }
         </div>
       </div>
 
       {showListenersModal && (
-        <ListenersModal 
-          element={element} 
+        <ListenersModal
+          element={element}
           modeler={modeler}
           onClose={() => setShowListenersModal(false)}
         />
